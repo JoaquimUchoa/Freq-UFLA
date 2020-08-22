@@ -47,22 +47,24 @@ class _RootPageState extends State<RootPage> {
     });
   }
 
-  void loginCallback(bool isProfessorLogin) {
-    if (isProfessorLogin) {
-      widget.auth.getCurrentUser().then((user) {
-        setState(() {
+  void loginCallback() {
+    widget.auth.getCurrentUser().then((user) {
+      setState(() {
+        if (user != null) {
           _userId = user.uid.toString();
-        });
+        } else {
+          _setStudentRegistrationNumber();
+        }
+
+        authStatus = AuthStatus.LOGGED_IN;
       });
-    }
-    setState(() {
-      authStatus = AuthStatus.LOGGED_IN;
     });
   }
 
   void logoutCallback() {
     setState(() {
       authStatus = AuthStatus.NOT_LOGGED_IN;
+      widget.auth.signOut();
       _userId = "";
       _registrationNumber = "";
     });
@@ -86,16 +88,21 @@ class _RootPageState extends State<RootPage> {
       case AuthStatus.NOT_LOGGED_IN:
         return new Login(
           auth: widget.auth,
-          loginCallback: loginCallback(true),
+          loginCallback: loginCallback,
         );
         break;
       case AuthStatus.LOGGED_IN:
         if (_userId.length > 0 && _userId != null) {
-          return new StudentHome(
+          return new ProfessorHome(
             userId: _userId,
             logoutCallback: logoutCallback,
           );
-        } else
+        } else if (_registrationNumber != '') {
+          return new StudentHome(
+            registrationNumber: _registrationNumber,
+            logoutCallback: logoutCallback,
+          );
+        }
           return buildWaitingScreen();
         break;
       default:

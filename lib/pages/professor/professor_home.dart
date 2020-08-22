@@ -18,6 +18,12 @@ class _ProfessorHomeState extends State<ProfessorHome> {
     return Scaffold(
         appBar: AppBar(
           title: Text("ProfessorHome"),
+          actions: <Widget>[
+            IconButton(
+              icon: Icon(Icons.exit_to_app),
+              onPressed: widget.logoutCallback,
+            ),
+          ],
         ),
         body: Text("ProfessorHome")
     );

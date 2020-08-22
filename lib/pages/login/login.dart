@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:freq_ufla/util/generalAlertDialog.dart';
 import 'package:freq_ufla/services/authentication.dart';
 
 import 'package:freq_ufla/components/button.dart';
-
-typedef Bool2VoidFunc = void Function(bool);
 
 class Login extends StatefulWidget {
   Login({this.auth, this.loginCallback});
 
   final BaseAuth auth;
-  final Bool2VoidFunc loginCallback;
+  final VoidCallback loginCallback;
 
   @override
   State<StatefulWidget> createState() => _LoginState();
@@ -25,6 +24,8 @@ class _LoginState extends State<Login> {
 
   String _email;
   String _password;
+
+  GeneralAlertDialog _alert;
 
   bool _isStudentLogin;
   bool _isLoading;
@@ -54,27 +55,38 @@ class _LoginState extends State<Login> {
         _isLoading = true;
       });
 
-      if (_isStudentLogin){
+      if (_isStudentLogin) {
         if (_validateAndSaveStudentForm()) {
           final prefs = await SharedPreferences.getInstance();
-          prefs.setString('registrationNumber', _registrationNumber);
+          await prefs.setString('registrationNumber', _registrationNumber);
+          widget.loginCallback();
         }
       } else {
         if (_validateAndSaveProfessorForm()) {
           String userId = await widget.auth.signIn(_email, _password);
 
           if (userId.length > 0 && userId != null) {
-            widget.loginCallback(true);
+            widget.loginCallback();
           }
         }
       }
     } catch (e) {
-      //msg
+      _showDialog('Erro', e);
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  void _showDialog(title, content) {
+    this._alert = GeneralAlertDialog(title: title, content: content);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return this._alert;
+      },
+    );
   }
 
   @override
@@ -92,15 +104,15 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      child: Center(
-        child: Stack(
-          children: <Widget>[
-            _form(),
-            _circularProgress(),
-          ],
-        ),
-      ));
+    return Scaffold(
+        body: Center(
+          child: Stack(
+            children: <Widget>[
+              _formBlock(),
+              _circularProgress(),
+            ],
+          ),
+        ));
   }
 
   Widget _circularProgress() {
@@ -113,22 +125,35 @@ class _LoginState extends State<Login> {
     );
   }
 
-  Widget _form() {
+  Widget _formBlock() {
     return Container(
-        padding: EdgeInsets.all(16.0),
-        child: Form(
-          key: _formProfessorKey,
-          child: ListView(
-            shrinkWrap: true,
-            children: <Widget>[
-              _logo(),
-              _registrationNumberInput(),
-              _emailInput(),
-              _passwordInput(),
-              _loginButton(),
-              _changeFormButton(),
-            ],
-          ),
+      padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0.0,),
+      child: ListView(
+        shrinkWrap: true,
+        children: <Widget>[
+          _logo(),
+          _form(),
+          _loginButton(),
+          _changeFormButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _form() {
+    if (_isStudentLogin) {
+      return Form(
+        key: _formStudentKey,
+        child: _registrationNumberInput(),
+      );
+    }
+    return Form(
+        key: _formProfessorKey,
+        child: Column(
+          children: <Widget>[
+            _emailInput(),
+            _passwordInput(),
+          ],
         ));
   }
 
@@ -155,70 +180,67 @@ class _LoginState extends State<Login> {
   }
 
   Widget _registrationNumberInput() {
-    if (_isStudentLogin) {
-      return TextFormField(
-        key: _formStudentKey,
-        maxLines: 1,
-        keyboardType: TextInputType.number,
-        autofocus: false,
-        decoration: InputDecoration(
-            hintText: 'Matrícula',
-            icon: Icon(
-              Icons.account_box,
-              color: Colors.grey,
-            )),
-        validator: (value) => value.isEmpty ? 'Preencha sua matrícula' : null,
-        onSaved: (value) => _registrationNumber = value.trim(),
-      );
-    }
-    return Container();
+    return TextFormField(
+      maxLines: 1,
+      maxLength: 9,
+      keyboardType: TextInputType.number,
+      autofocus: false,
+      decoration: InputDecoration(
+          hintText: 'Matrícula',
+          icon: Icon(
+            Icons.account_box,
+            color: Colors.grey,
+          )),
+      validator: (value) {
+        if (value.isEmpty)
+          return 'Preencha sua matrícula';
+        else if (value.length != 9) return 'A matrícula deve possuir 9 dígitos';
+        return null;
+      },
+      onSaved: (value) => _registrationNumber = value.trim(),
+    );
   }
 
   Widget _emailInput() {
-    if (!_isStudentLogin) {
-      return TextFormField(
-        maxLines: 1,
-        keyboardType: TextInputType.emailAddress,
-        autofocus: false,
-        decoration: InputDecoration(
-            hintText: 'Email',
-            icon: Icon(
-              Icons.mail,
-              color: Colors.grey,
-            )),
-        validator: (value) => EmailValidator.validate(value) ? null : 'Entre com um email válido',
-        onSaved: (value) => _email = value.trim(),
-      );
-    }
-    return Container();
+    return TextFormField(
+      maxLines: 1,
+      keyboardType: TextInputType.emailAddress,
+      autofocus: false,
+      decoration: InputDecoration(
+          hintText: 'Email',
+          icon: Icon(
+            Icons.mail,
+            color: Colors.grey,
+          )),
+      validator: (value) =>
+          EmailValidator.validate(value) ? null : 'Entre com um email válido',
+      onSaved: (value) => _email = value.trim(),
+    );
   }
 
   Widget _passwordInput() {
-    if (!_isStudentLogin) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
-        child: TextFormField(
-          maxLines: 1,
-          obscureText: true,
-          autofocus: false,
-          decoration: InputDecoration(
-              hintText: 'Password',
-              icon: Icon(
-                Icons.lock,
-                color: Colors.grey,
-              )),
-          validator: (value) {
-            if (value.isEmpty)
-              return 'Senha necessária';
-            else if (value.length < 6)
-              return 'A senha precisa ter pelo menos 6 caracteres';
-            return null;
-          },
-          onSaved: (value) => _password = value.trim(),
-        ),
-      );
-    }
-    return Container();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0.0, 15.0, 0.0, 0.0),
+      child: TextFormField(
+        maxLines: 1,
+        obscureText: true,
+        autofocus: false,
+        decoration: InputDecoration(
+            hintText: 'Password',
+            icon: Icon(
+              Icons.lock,
+              color: Colors.grey,
+            )),
+        validator: (value) {
+          if (value.isEmpty)
+            return 'Senha necessária';
+          else if (value.length < 6)
+            return 'A senha precisa ter pelo menos 6 caracteres';
+          return null;
+        },
+        onSaved: (value) => _password = value.trim(),
+      ),
+    );
   }
 
   Widget _loginButton() {
@@ -230,11 +252,8 @@ class _LoginState extends State<Login> {
 
   Widget _changeFormButton() {
     return FlatButton(
-        child: Text(
-            _isStudentLogin ? 'Sou professor' : 'Sou aluno',
+        child: Text(_isStudentLogin ? 'Sou professor' : 'Sou aluno',
             style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.w300)),
-        onPressed: _toggleFormMode
-    );
+        onPressed: _toggleFormMode);
   }
-
 }
