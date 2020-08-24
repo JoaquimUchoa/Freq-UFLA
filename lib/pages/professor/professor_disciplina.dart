@@ -7,19 +7,18 @@ class ProfessorDisciplina extends StatefulWidget {
 }
 
 class _ProfessorDisciplinaState extends State<ProfessorDisciplina> {
-  var _disciplina;
+  var _turmas;
   String _disciplinaName;
+  List _disc;
 
-  void _setDisciplina(String disc) {
+  void _setTurmas(String disc) {
     setState(() {
-      _disciplina = Firestore.instance
+      _turmas = Firestore.instance
           .collection('periodos')
           .document('2020-1')
           .collection('disciplinas')
           .document(disc)
           .collection('turmas')
-          .document('10A')
-          .collection('aulas')
           .snapshots();
     });
   }
@@ -28,43 +27,72 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    final List disc = ModalRoute.of(context).settings.arguments;
-    _setDisciplina(disc[0]);
-    _disciplinaName = disc[1];
+    _disc = ModalRoute.of(context).settings.arguments;
+    _setTurmas(_disc[0]);
+    _disciplinaName = _disc[1];
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: Text(_disciplinaName),
-        ),
-        body: StreamBuilder(
-            stream: _disciplina,
-            builder: (BuildContext context,
-                AsyncSnapshot<QuerySnapshot> disciplina) {
-              if (disciplina.hasError) {
-                return Center(child: Text('Error: ${disciplina.error}'));
-              }
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+          appBar: AppBar(
+            title: Text(_disciplinaName),
+            bottom: TabBar(tabs: <Widget>[Tab(text: '10A'), Tab(text: '14A')]),
+          ),
+          body: TabBarView(
+            children: [
+              _buildStreamBuilder(context), //10A
+              _buildStreamBuilder(context), //14A
+            ],
+          )),
+    );
+  }
 
-              if (disciplina.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              }
+  Widget _buildStreamBuilder(context) {
+    return StreamBuilder<QuerySnapshot>(
+        stream: Firestore.instance
+            .collection('periodos')
+            .document('2020-1')
+            .collection('disciplinas')
+            .document(_disc[0])
+            .collection('turmas')
+            .document('10A')
+            .collection('aulas')
+            .snapshots(),
+        builder:
+            (BuildContext context, AsyncSnapshot<QuerySnapshot> disciplina) {
+          if (disciplina.hasError) {
+            return Center(child: Text('Error: ${disciplina.error}'));
+          }
 
-              if (disciplina.data.documents.length == 0) {
-                return Center(child: Text('Nenhuma aula cadastrada.'));
-              }
+          if (disciplina.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
 
-              return ListView.builder(
-                  itemCount: disciplina.data.documents.length,
-                  itemBuilder: (BuildContext context, int i) {
-                    //print(disciplina.data.documents[i].data);
-                    return ListTile(
-                        title: Text(
-                      'Aula do dia: ${_formatDate(disciplina.data.documents[i].data['data'].seconds)}',
-                    ));
-                  });
-            }));
+          if (disciplina.data.documents.length == 0) {
+            return Center(child: Text('Nenhuma aula cadastrada.'));
+          }
+
+          return ListView.builder(
+              itemCount: disciplina.data.documents.length,
+              itemBuilder: (BuildContext context, int i) {
+                return Padding(
+                    key: ValueKey(disciplina.data.documents[i].documentID),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 8.0),
+                    child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(5.0),
+                        ),
+                        child: ListTile(
+                          title: Text(
+                              'Aula do dia: ${_formatDate(disciplina.data.documents[i].data['data'].seconds)}'),
+                        )));
+              });
+        });
   }
 
   String _formatDate(seconds) {
