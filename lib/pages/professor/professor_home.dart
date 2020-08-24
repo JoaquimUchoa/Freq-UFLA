@@ -60,17 +60,27 @@ class _ProfessorHomeState extends State<ProfessorHome> {
               return ListView.builder(
                   itemCount: disciplina.data.documents.length,
                   itemBuilder: (BuildContext context, int i) {
-                    return ListTile(
-                      title: Text(
-                          '${disciplina.data.documents[i].documentID} - ${disciplina.data.documents[i].data['nome']}'),
-                      onTap: () => {
-                        Navigator.of(context)
-                            .pushNamed('/professor/disciplina', arguments: [
-                          disciplina.data.documents[i].documentID,
-                          disciplina.data.documents[i].data['nome']
-                        ])
-                      },
-                    );
+                    return Padding(
+                        key: ValueKey(disciplina.data.documents[i].documentID),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
+                        child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(5.0),
+                            ),
+                            child: ListTile(
+                              title: Text(
+                                  '${disciplina.data.documents[i].documentID} - ${disciplina.data.documents[i].data['nome']}'),
+                              onTap: () => {
+                                Navigator.of(context).pushNamed(
+                                    '/professor/disciplina',
+                                    arguments: [
+                                      disciplina.data.documents[i].documentID,
+                                      disciplina.data.documents[i].data['nome']
+                                    ])
+                              },
+                            )));
                   });
             }));
   }
