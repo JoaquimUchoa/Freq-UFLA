@@ -39,7 +39,7 @@ class Auth implements BaseAuth {
         default:
           content = e;
       }
-      throw(content);
+      throw (content);
     }
   }
 
