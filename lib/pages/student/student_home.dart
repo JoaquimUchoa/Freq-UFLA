@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:freq_ufla/pages/student/class.dart';
 
 class StudentHome extends StatefulWidget {
   StudentHome({Key key, this.registrationNumber, this.logoutCallback})
@@ -108,18 +108,17 @@ class _StudentHomeState extends State<StudentHome> {
                                     [widget.registrationNumber] ==
                                 false)
                             .length;
-                        debugPrint(faltas.toString());
                         return Text("Quantidade de faltas: $faltas");
                       }),
                   onTap: () => {
-                        Fluttertoast.showToast(
-                            msg: "Abrindo disciplina",
-                            toastLength: Toast.LENGTH_SHORT,
-                            gravity: ToastGravity.BOTTOM,
-                            timeInSecForIosWeb: 2,
-                            backgroundColor: Colors.grey,
-                            textColor: Colors.white,
-                            fontSize: 16.0),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => ClassHome(
+                                  key: Key(data.documentID),
+                                  registrationNumber: widget.registrationNumber,
+                                  codClass: data.documentID)),
+                        ),
                       }),
             ),
           );
