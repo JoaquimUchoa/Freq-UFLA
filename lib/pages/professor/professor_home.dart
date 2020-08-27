@@ -77,7 +77,9 @@ class _ProfessorHomeState extends State<ProfessorHome> {
                                     '/professor/disciplina',
                                     arguments: [
                                       disciplina.data.documents[i].documentID,
-                                      disciplina.data.documents[i].data['nome']
+                                      disciplina.data.documents[i].data['nome'],
+                                      disciplina
+                                          .data.documents[i].data['turmas']
                                     ])
                               },
                             )));
