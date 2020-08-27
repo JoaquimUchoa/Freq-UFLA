@@ -7,50 +7,76 @@ class ProfessorDisciplina extends StatefulWidget {
 }
 
 class _ProfessorDisciplinaState extends State<ProfessorDisciplina> {
-  var _turmas;
+  List<String> _turmas = new List<String>();
   String _disciplinaName;
   List _disc;
-
-  void _setTurmas(String disc) {
-    setState(() {
-      _turmas = Firestore.instance
-          .collection('periodos')
-          .document('2020-1')
-          .collection('disciplinas')
-          .document(disc)
-          .collection('turmas')
-          .snapshots();
-    });
-  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
     _disc = ModalRoute.of(context).settings.arguments;
-    _setTurmas(_disc[0]);
+
+    //_disc[0] -> documentID, logo código da disciplina
+    //_disc[1] -> nome da disciplina
+    //_disc[2] -> array com as turmas turmas
+
     _disciplinaName = _disc[1];
+
+    _disc[2].forEach((element) {
+      print(element);
+      setState(() => {_turmas.add(element.toString())});
+      print(_turmas.length);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
+    if (_turmas.length > 0) {
+      return DefaultTabController(
+        length: _turmas.length,
+        child: Scaffold(
           appBar: AppBar(
             title: Text(_disciplinaName),
-            bottom: TabBar(tabs: <Widget>[Tab(text: '10A'), Tab(text: '14A')]),
+            bottom: _turmas.length > 3
+                ? TabBar(
+                    isScrollable: true,
+                    tabs: List<Widget>.generate(
+                        _turmas.length,
+                        (index) => Container(
+                            width: MediaQuery.of(context).size.width /
+                                _turmas.length,
+                            child: Tab(text: _turmas[index]))),
+                  )
+                : TabBar(
+                    tabs: List<Widget>.generate(
+                        _turmas.length, (index) => Tab(text: _turmas[index])),
+                  ),
           ),
           body: TabBarView(
-            children: [
-              _buildStreamBuilder(context), //10A
-              _buildStreamBuilder(context), //14A
-            ],
-          )),
-    );
+              children: List<Widget>.generate(_turmas.length,
+                  (index) => _buildStreamBuilder(context, _turmas[index]))),
+          floatingActionButton:
+              FloatingActionButton(onPressed: null, child: Icon(Icons.add)),
+        ),
+      );
+    } else {
+      return Container(
+          child: Scaffold(
+        appBar: AppBar(
+          title: Text(_disciplinaName),
+        ),
+        body: Center(child: CircularProgressIndicator()),
+      ));
+    }
   }
 
-  Widget _buildStreamBuilder(context) {
+  Widget _buildStreamBuilder(context, turma) {
     return StreamBuilder<QuerySnapshot>(
         stream: Firestore.instance
             .collection('periodos')
@@ -58,28 +84,27 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina> {
             .collection('disciplinas')
             .document(_disc[0])
             .collection('turmas')
-            .document('10A')
+            .document(turma)
             .collection('aulas')
             .snapshots(),
-        builder:
-            (BuildContext context, AsyncSnapshot<QuerySnapshot> disciplina) {
-          if (disciplina.hasError) {
-            return Center(child: Text('Error: ${disciplina.error}'));
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> aula) {
+          if (aula.hasError) {
+            return Center(child: Text('Error: ${aula.error}'));
           }
 
-          if (disciplina.connectionState == ConnectionState.waiting) {
+          if (aula.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
 
-          if (disciplina.data.documents.length == 0) {
+          if (aula.data.documents.length == 0) {
             return Center(child: Text('Nenhuma aula cadastrada.'));
           }
 
           return ListView.builder(
-              itemCount: disciplina.data.documents.length,
+              itemCount: aula.data.documents.length,
               itemBuilder: (BuildContext context, int i) {
                 return Padding(
-                    key: ValueKey(disciplina.data.documents[i].documentID),
+                    key: ValueKey(aula.data.documents[i].documentID),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16.0, vertical: 8.0),
                     child: Container(
@@ -89,7 +114,7 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina> {
                         ),
                         child: ListTile(
                           title: Text(
-                              'Aula do dia: ${_formatDate(disciplina.data.documents[i].data['data'].seconds)}'),
+                              'Aula do dia: ${_formatDate(aula.data.documents[i].data['data'].seconds)}'),
                         )));
               });
         });
