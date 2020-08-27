@@ -3,11 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freq_ufla/pages/student/class.dart';
 
 class StudentHome extends StatefulWidget {
-  StudentHome({Key key, this.registrationNumber, this.logoutCallback})
+  StudentHome(
+      {Key key, this.registrationNumber, this.classes, this.logoutCallback})
       : super(key: key);
 
   final VoidCallback logoutCallback;
   final String registrationNumber;
+  final Map<String, dynamic> classes;
 
   @override
   _StudentHomeState createState() => _StudentHomeState();
