@@ -4,11 +4,16 @@ import 'package:freq_ufla/pages/student/class.dart';
 
 class StudentHome extends StatefulWidget {
   StudentHome(
-      {Key key, this.registrationNumber, this.classes, this.logoutCallback})
+      {Key key,
+      this.registrationNumber,
+      this.currentPeriod,
+      this.classes,
+      this.logoutCallback})
       : super(key: key);
 
   final VoidCallback logoutCallback;
   final String registrationNumber;
+  final String currentPeriod;
   final Map<String, dynamic> classes;
 
   @override
@@ -36,7 +41,7 @@ class _StudentHomeState extends State<StudentHome> {
     return StreamBuilder<QuerySnapshot>(
       stream: Firestore.instance
           .collection('periodos')
-          .document('2020-1')
+          .document(widget.currentPeriod)
           .collection('disciplinas')
           .snapshots(),
       builder: (context, snapshot) {
@@ -61,11 +66,11 @@ class _StudentHomeState extends State<StudentHome> {
     return StreamBuilder<QuerySnapshot>(
       stream: Firestore.instance
           .collection('periodos')
-          .document('2020-1')
+          .document(widget.currentPeriod)
           .collection('disciplinas')
           .document(data.documentID)
           .collection('turmas')
-          .document('10A')
+          .document(widget.classes[data.documentID])
           .collection('alunos')
           .snapshots(),
       builder: (context, snapshot) {
@@ -92,11 +97,11 @@ class _StudentHomeState extends State<StudentHome> {
                   subtitle: StreamBuilder<QuerySnapshot>(
                       stream: Firestore.instance
                           .collection('periodos')
-                          .document('2020-1')
+                          .document(widget.currentPeriod)
                           .collection('disciplinas')
                           .document(data.documentID)
                           .collection('turmas')
-                          .document('10A')
+                          .document(widget.classes[data.documentID])
                           .collection('aulas')
                           .snapshots(),
                       builder: (context, snapshot) {
@@ -118,6 +123,8 @@ class _StudentHomeState extends State<StudentHome> {
                           MaterialPageRoute(
                               builder: (context) => ClassHome(
                                   key: Key(data.documentID),
+                                  currentClass: widget.classes[data.documentID],
+                                  selectedPeriod: widget.currentPeriod,
                                   registrationNumber: widget.registrationNumber,
                                   codClass: data.documentID)),
                         ),

@@ -131,6 +131,7 @@ class _RootPageState extends State<RootPage> {
 
                     return new StudentHome(
                         registrationNumber: _registrationNumber,
+                        currentPeriod: _currentPeriod,
                         logoutCallback: logoutCallback,
                         classes: classes);
                   }
