@@ -72,7 +72,6 @@ class _LoginState extends State<Login> {
       }
     } catch (e) {
       _showDialog('Erro', e);
-    } finally {
       setState(() {
         _isLoading = false;
       });
@@ -111,8 +110,9 @@ class _LoginState extends State<Login> {
               _formBlock(),
               _circularProgress(),
             ],
-          ),
-        ));
+          )
+        )
+    );
   }
 
   Widget _circularProgress() {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:freq_ufla/services/authentication.dart';
 import 'package:freq_ufla/pages/login/login.dart';
@@ -25,6 +26,7 @@ class _RootPageState extends State<RootPage> {
 
   String _userId = "";
   String _registrationNumber = "";
+  String _currentPeriod = "";
 
   @override
   void initState() {
@@ -34,16 +36,31 @@ class _RootPageState extends State<RootPage> {
         if (user != null) {
           _userId = user?.uid;
         }
-        authStatus = user?.uid == null ? AuthStatus.NOT_LOGGED_IN : AuthStatus.LOGGED_IN;
+        authStatus =
+            user?.uid == null ? AuthStatus.NOT_LOGGED_IN : AuthStatus.LOGGED_IN;
       });
     });
+
     _setStudentRegistrationNumber();
+    _setConfigurations();
   }
 
   void _setStudentRegistrationNumber() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _registrationNumber = prefs.getString('registrationNumber') ?? '';
+    });
+  }
+
+  void _setConfigurations() async {
+    Firestore.instance
+        .collection('configuracoes')
+        .document('periodo_atual')
+        .snapshots()
+        .listen((document) async {
+      _currentPeriod = document.data["valor"];
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('currentPeriod', _currentPeriod);
     });
   }
 
@@ -92,18 +109,35 @@ class _RootPageState extends State<RootPage> {
         );
         break;
       case AuthStatus.LOGGED_IN:
-        if (_userId.length > 0 && _userId != null) {
-          return new ProfessorHome(
-            userId: _userId,
-            logoutCallback: logoutCallback,
-          );
-        } else if (_registrationNumber != '') {
-          return new StudentHome(
-            registrationNumber: _registrationNumber,
-            logoutCallback: logoutCallback,
-          );
+        if (_currentPeriod != '') {
+          if (_userId.length > 0 && _userId != null) {
+            return new ProfessorHome(
+              userId: _userId,
+              logoutCallback: logoutCallback,
+            );
+          } else if (_registrationNumber != '') {
+            return StreamBuilder<DocumentSnapshot>(
+                stream: Firestore.instance
+                    .collection('alunos')
+                    .document(_registrationNumber)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    Map<String, dynamic> classes = new Map<String, dynamic>();
+
+                    if (snapshot.data.exists) {
+                      classes.addAll(snapshot.data['turmas'][_currentPeriod]);
+                    }
+
+                    return new StudentHome(
+                        registrationNumber: _registrationNumber,
+                        logoutCallback: logoutCallback,
+                        classes: classes);
+                  }
+                  return buildWaitingScreen();
+                });
+          }
         }
-          return buildWaitingScreen();
         break;
       default:
         return buildWaitingScreen();

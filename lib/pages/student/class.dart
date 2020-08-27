@@ -69,7 +69,7 @@ class _ClassState extends State<ClassHome> {
                 : Color(0xFFEF8F73)),
         child: ListTile(
           title: Text(
-            "${DateFormat("EEEE, d 'de' MMMM 'às' hh:mm a", 'pt_Br').format(DateTime.parse(data.data["data"].toDate().toString()))}",
+            "${DateFormat("EEEE, d 'de' MMMM 'às' HH:mm", 'pt_Br').format(DateTime.parse(data.data["data"].toDate().toString()))}",
           ),
           subtitle: data.data["chamada"][widget.registrationNumber]
               ? Text("Presente")
