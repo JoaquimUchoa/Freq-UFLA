@@ -3,9 +3,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 class ClassHome extends StatefulWidget {
-  ClassHome({Key key, this.registrationNumber, this.codClass})
+  ClassHome(
+      {Key key,
+      this.currentClass,
+      this.selectedPeriod,
+      this.registrationNumber,
+      this.codClass})
       : super(key: key);
 
+  final String selectedPeriod;
+  final String currentClass;
   final String codClass;
   final String registrationNumber;
 
@@ -28,11 +35,11 @@ class _ClassState extends State<ClassHome> {
     return StreamBuilder<QuerySnapshot>(
       stream: Firestore.instance
           .collection('periodos')
-          .document('2020-1')
+          .document(widget.selectedPeriod)
           .collection('disciplinas')
           .document(widget.codClass)
           .collection('turmas')
-          .document('10A')
+          .document(widget.currentClass)
           .collection('aulas')
           .orderBy("data", descending: true)
           .snapshots(),
@@ -41,7 +48,7 @@ class _ClassState extends State<ClassHome> {
           return Center(
             child: CircularProgressIndicator(),
           );
-
+        debugPrint(snapshot.data.toString());
         return _buildList(context, snapshot.data.documents);
       },
     );
@@ -57,6 +64,7 @@ class _ClassState extends State<ClassHome> {
   Widget _buildListItem(BuildContext context, DocumentSnapshot data) {
     debugPrint(data.data.toString());
     debugPrint(data.documentID);
+    debugPrint("aaaa: ${data.data["chamada"][widget.registrationNumber]}");
     return Padding(
       key: ValueKey(data.documentID),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
