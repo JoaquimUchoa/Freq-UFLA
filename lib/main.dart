@@ -12,20 +12,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
-        localizationsDelegates: [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        title: 'Freq UFLA',
-        debugShowCheckedModeBanner: false,
-        theme: new ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: new RootPage(auth: new Auth()),
-        routes: <String, WidgetBuilder>{
-          '/professor/disciplina': (BuildContext context) =>
-              ProfessorDisciplina(),
-        });
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      title: 'Freq UFLA',
+      debugShowCheckedModeBanner: false,
+      theme: new ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: new RootPage(auth: new Auth()),
+    );
   }
 }
