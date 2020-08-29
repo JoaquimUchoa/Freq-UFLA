@@ -1,75 +1,93 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:freq_ufla/pages/professor/professor_aula.dart';
+import 'package:intl/intl.dart';
 
 class ProfessorDisciplina extends StatefulWidget {
+  ProfessorDisciplina(
+      {Key key,
+      this.disciplinaNome,
+      this.disciplinaCodigo,
+      this.currentPeriod,
+      this.turmas})
+      : super(key: key);
+
+  final String disciplinaNome;
+  final String disciplinaCodigo;
+  final String currentPeriod;
+  final List<String> turmas;
   @override
   _ProfessorDisciplinaState createState() => _ProfessorDisciplinaState();
 }
 
-class _ProfessorDisciplinaState extends State<ProfessorDisciplina> {
-  List<String> _turmas = new List<String>();
-  String _disciplinaName;
-  List _disc;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    _disc = ModalRoute.of(context).settings.arguments;
-
-    //_disc[0] -> documentID, logo código da disciplina
-    //_disc[1] -> nome da disciplina
-    //_disc[2] -> array com as turmas turmas
-
-    _disciplinaName = _disc[1];
-
-    _disc[2].forEach((element) {
-      print(element);
-      setState(() => {_turmas.add(element.toString())});
-      print(_turmas.length);
-    });
-  }
+class _ProfessorDisciplinaState extends State<ProfessorDisciplina>
+    with TickerProviderStateMixin {
+  TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = new TabController(
+      length: widget.turmas.length,
+      vsync: this,
+      initialIndex: 0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_turmas.length > 0) {
-      return DefaultTabController(
-        length: _turmas.length,
-        child: Scaffold(
-          appBar: AppBar(
-            title: Text(_disciplinaName),
-            bottom: _turmas.length > 3
-                ? TabBar(
-                    isScrollable: true,
-                    tabs: List<Widget>.generate(
-                        _turmas.length,
-                        (index) => Container(
-                            width: MediaQuery.of(context).size.width /
-                                _turmas.length,
-                            child: Tab(text: _turmas[index]))),
-                  )
-                : TabBar(
-                    tabs: List<Widget>.generate(
-                        _turmas.length, (index) => Tab(text: _turmas[index])),
-                  ),
-          ),
-          body: TabBarView(
-              children: List<Widget>.generate(_turmas.length,
-                  (index) => _buildStreamBuilder(context, _turmas[index]))),
-          floatingActionButton:
-              FloatingActionButton(onPressed: null, child: Icon(Icons.add)),
+    if (widget.turmas.length > 0) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.disciplinaNome),
+          bottom: widget.turmas.length > 3
+              ? TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabs: List<Widget>.generate(
+                      widget.turmas.length,
+                      (index) => Container(
+                          width: MediaQuery.of(context).size.width /
+                              widget.turmas.length,
+                          child: Tab(text: widget.turmas[index].toString()))),
+                )
+              : TabBar(
+                  controller: _tabController,
+                  tabs: List<Widget>.generate(widget.turmas.length,
+                      (index) => Tab(text: widget.turmas[index].toString())),
+                ),
         ),
+        body: TabBarView(
+            controller: _tabController,
+            children: List<Widget>.generate(
+                widget.turmas.length,
+                (index) => _buildStreamBuilder(
+                    context, widget.turmas[index].toString()))),
+        floatingActionButton: FloatingActionButton(
+            onPressed: () => {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ProfessorAula(
+                            key: Key(widget.turmas[_tabController.index]),
+                            disciplinaCodigo: widget.disciplinaCodigo,
+                            currentPeriod: widget.currentPeriod,
+                            turma: widget.turmas[_tabController.index])),
+                  ),
+                },
+            child: Icon(Icons.add)),
       );
     } else {
       return Container(
           child: Scaffold(
         appBar: AppBar(
-          title: Text(_disciplinaName),
+          title: Text(widget.disciplinaNome),
         ),
         body: Center(child: CircularProgressIndicator()),
       ));
@@ -80,9 +98,9 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina> {
     return StreamBuilder<QuerySnapshot>(
         stream: Firestore.instance
             .collection('periodos')
-            .document('2020-1')
+            .document(widget.currentPeriod)
             .collection('disciplinas')
-            .document(_disc[0])
+            .document(widget.disciplinaCodigo)
             .collection('turmas')
             .document(turma)
             .collection('aulas')
@@ -114,21 +132,9 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina> {
                         ),
                         child: ListTile(
                           title: Text(
-                              'Aula do dia: ${_formatDate(aula.data.documents[i].data['data'].seconds)}'),
+                              'Aula de ${DateFormat("EEEE, d 'de' MMMM 'às' HH:mm", 'pt_Br').format(DateTime.parse(aula.data.documents[i].data['data'].toDate().toString()))}'),
                         )));
               });
         });
-  }
-
-  String _formatDate(seconds) {
-    var dia =
-        DateTime.fromMillisecondsSinceEpoch(seconds * 1000).day.toString();
-    if (int.parse(dia) < 10) dia = '0$dia';
-    var mes =
-        DateTime.fromMillisecondsSinceEpoch(seconds * 1000).month.toString();
-    if (int.parse(mes) < 10) mes = '0$mes';
-    var ano =
-        DateTime.fromMillisecondsSinceEpoch(seconds * 1000).year.toString();
-    return '$dia/$mes/$ano';
   }
 }
