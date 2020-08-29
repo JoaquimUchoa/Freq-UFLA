@@ -112,9 +112,9 @@ class _RootPageState extends State<RootPage> {
         if (_currentPeriod != '') {
           if (_userId.length > 0 && _userId != null) {
             return new ProfessorHome(
-              userId: _userId,
-              logoutCallback: logoutCallback,
-            );
+                userId: _userId,
+                logoutCallback: logoutCallback,
+                currentPeriod: _currentPeriod);
           } else if (_registrationNumber != '') {
             return StreamBuilder<DocumentSnapshot>(
                 stream: Firestore.instance
