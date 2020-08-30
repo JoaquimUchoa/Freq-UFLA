@@ -78,7 +78,9 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina>
                             key: Key(widget.turmas[_tabController.index]),
                             disciplinaCodigo: widget.disciplinaCodigo,
                             currentPeriod: widget.currentPeriod,
-                            turma: widget.turmas[_tabController.index])),
+                            turma: widget.turmas[_tabController.index],
+                            aulaEdit: null,
+                            aulaEditId: null)),
                   ),
                 },
             child: Icon(Icons.add)),
@@ -104,6 +106,7 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina>
             .collection('turmas')
             .document(turma)
             .collection('aulas')
+            .orderBy('data')
             .snapshots(),
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> aula) {
           if (aula.hasError) {
@@ -133,6 +136,58 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina>
                         child: ListTile(
                           title: Text(
                               'Aula de ${DateFormat("EEEE, d 'de' MMMM 'às' HH:mm", 'pt_Br').format(DateTime.parse(aula.data.documents[i].data['data'].toDate().toString()))}'),
+                          onLongPress: () => {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text('Excluir Aula'),
+                                content: Text(
+                                    'Deseja realmente excluir a aula de ${DateFormat("EEEE, d 'de' MMMM", 'pt_Br').format(DateTime.parse(aula.data.documents[i].data['data'].toDate().toString()))}?'),
+                                actions: <Widget>[
+                                  FlatButton(
+                                    child: Text('Não'),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  FlatButton(
+                                    child: Text('Sim'),
+                                    onPressed: () async {
+                                      Navigator.pop(context);
+                                      await Firestore.instance
+                                          .collection('periodos')
+                                          .document(widget.currentPeriod)
+                                          .collection('disciplinas')
+                                          .document(widget.disciplinaCodigo)
+                                          .collection('turmas')
+                                          .document(widget
+                                              .turmas[_tabController.index])
+                                          .collection('aulas')
+                                          .document(
+                                              aula.data.documents[i].documentID)
+                                          .delete();
+                                    },
+                                  )
+                                ],
+                              ),
+                            )
+                          },
+                          onTap: () => {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ProfessorAula(
+                                      key: Key(
+                                          widget.turmas[_tabController.index]),
+                                      disciplinaCodigo: widget.disciplinaCodigo,
+                                      currentPeriod: widget.currentPeriod,
+                                      turma:
+                                          widget.turmas[_tabController.index],
+                                      aulaEdit: aula.data.documents[i].data,
+                                      aulaEditId:
+                                          aula.data.documents[i].documentID)),
+                            ),
+                          },
                         )));
               });
         });
