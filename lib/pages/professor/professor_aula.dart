@@ -1,24 +1,55 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:toast/toast.dart';
 
 class ProfessorAula extends StatefulWidget {
   ProfessorAula(
-      {Key key, this.disciplinaCodigo, this.currentPeriod, this.turma})
+      {Key key,
+      this.disciplinaCodigo,
+      this.currentPeriod,
+      this.turma,
+      this.aulaEdit,
+      this.aulaEditId})
       : super(key: key);
 
   final String disciplinaCodigo;
   final String currentPeriod;
   final String turma;
+  final Map<String, dynamic> aulaEdit;
+  final String aulaEditId;
+
   @override
   _ProfessorAulaState createState() => _ProfessorAulaState();
 }
 
 class _ProfessorAulaState extends State<ProfessorAula> {
-  List<String> alunos = new List<String>();
-  List<bool> presencas = new List<bool>();
+  List<String> _alunos = new List<String>();
+  List<dynamic> _presencas = new List<dynamic>();
   DateTime _date;
   TimeOfDay _time;
+  final Map<String, dynamic> _aula = {};
+  final Map<String, bool> _chamada = {};
+
+  //se for visualização/edição
+  @override
+  void initState() {
+    super.initState();
+    if (widget.aulaEdit != null) {
+      _setValuesEdit();
+    }
+  }
+
+  _setValuesEdit() {
+    var dateTime = widget.aulaEdit['data'].seconds * 1000;
+    //date
+    _date = new DateTime.fromMillisecondsSinceEpoch(dateTime);
+    //time
+    _time = new TimeOfDay.fromDateTime(_date);
+    //faltas
+    widget.aulaEdit['chamada'].keys
+        .forEach((key) => _presencas.add(widget.aulaEdit['chamada'][key]));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,10 +60,75 @@ class _ProfessorAulaState extends State<ProfessorAula> {
             IconButton(
                 padding: EdgeInsets.only(right: 20.0),
                 icon: Icon(Icons.check_circle),
-                onPressed: () => {})
+                onPressed: () async => {
+                      //create
+                      _setChamada(),
+                      _aula['data'] = _setDateTimeToTimestamp(_date, _time),
+                      _aula['chamada'] = _chamada,
+                      if (widget.aulaEditId == null)
+                        {
+                          if (_aula['data'] == null)
+                            {
+                              Toast.show(
+                                  'Data e hora são obrigatórios!', context,
+                                  duration: Toast.LENGTH_LONG,
+                                  gravity: Toast.BOTTOM),
+                            }
+                          else
+                            {
+                              await Firestore.instance
+                                  .collection('periodos')
+                                  .document(widget.currentPeriod)
+                                  .collection('disciplinas')
+                                  .document(widget.disciplinaCodigo)
+                                  .collection('turmas')
+                                  .document(widget.turma)
+                                  .collection('aulas')
+                                  .add({
+                                    'data': _aula['data'],
+                                    'chamada': _aula['chamada'],
+                                  })
+                                  .then((value) => Navigator.pop(context))
+                                  .catchError((onError) => {print(onError)})
+                            }
+                        }
+                      //update
+                      else
+                        {
+                          await Firestore.instance
+                              .collection('periodos')
+                              .document(widget.currentPeriod)
+                              .collection('disciplinas')
+                              .document(widget.disciplinaCodigo)
+                              .collection('turmas')
+                              .document(widget.turma)
+                              .collection('aulas')
+                              .document(widget.aulaEditId)
+                              .updateData({
+                                'data': _aula['data'],
+                                'chamada': _aula['chamada'],
+                              })
+                              .then((value) => Navigator.pop(context))
+                              .catchError((onError) => {print(onError)})
+                        }
+                    })
           ],
         ),
         body: _buildContainerClass(context));
+  }
+
+  _setChamada() {
+    for (var i = 0; i < _alunos.length; i++) {
+      _chamada['${_alunos[i].replaceAll(' ', '')}'] = _presencas[i];
+    }
+  }
+
+  Timestamp _setDateTimeToTimestamp(DateTime date, TimeOfDay time) {
+    if (date == null || time == null) {
+      return null;
+    }
+    return Timestamp.fromDate(
+        new DateTime(date.year, date.month, date.day, time.hour, time.minute));
   }
 
   Widget _buildContainerClass(BuildContext context) {
@@ -60,13 +156,13 @@ class _ProfessorAulaState extends State<ProfessorAula> {
           }
 
           //setando true para todas as presenças (if serve para não adicionar novos valores ao renderizar)
-          if (presencas.length == 0) {
+          if (_presencas.length == 0) {
             List.generate(
-                aluno.data.documents.length, (index) => {presencas.add(true)});
+                aluno.data.documents.length, (index) => {_presencas.add(true)});
           }
-          if (alunos.length == 0)
+          if (_alunos.length == 0)
             aluno.data.documents.forEach((element) {
-              alunos.add(element.documentID);
+              _alunos.add(element.documentID);
             });
 
           return Container(
@@ -78,7 +174,7 @@ class _ProfessorAulaState extends State<ProfessorAula> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16.0, vertical: 8.0),
                       child: Row(children: <Widget>[
-                        Text('Horário da aula:'),
+                        Text('Aula de:'),
                         _setDate(),
                         _setTime()
                       ])),
@@ -139,11 +235,11 @@ class _ProfessorAulaState extends State<ProfessorAula> {
                     borderRadius: BorderRadius.circular(5.0),
                   ),
                   child: ListTile(
-                    title: Text(aluno[i].documentID),
+                    title: Text(aluno[i].documentID.replaceAll(' ', '')),
                     trailing: Switch(
-                        value: presencas[i],
+                        value: _presencas[i],
                         onChanged: (s) => {
-                              setState(() => {presencas[i] = s})
+                              setState(() => {_presencas[i] = s})
                             }),
                   )));
         });
