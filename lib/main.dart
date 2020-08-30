@@ -17,6 +17,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      supportedLocales: [const Locale('pt', 'BR')],
       title: 'Freq UFLA',
       debugShowCheckedModeBanner: false,
       theme: new ThemeData(
