@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:freq_ufla/pages/professor/professor_disciplina.dart';
-import 'package:freq_ufla/services/authentication.dart';
-import 'package:freq_ufla/pages/root.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:freq_ufla/pages/root.dart';
+import 'package:freq_ufla/services/authentication.dart';
 
 void main() {
   runApp(new MyApp());
