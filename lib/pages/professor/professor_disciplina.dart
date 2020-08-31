@@ -106,7 +106,7 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina>
             .collection('turmas')
             .document(turma)
             .collection('aulas')
-            .orderBy('data')
+            .orderBy('data', descending: true)
             .snapshots(),
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> aula) {
           if (aula.hasError) {
