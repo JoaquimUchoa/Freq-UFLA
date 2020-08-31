@@ -126,7 +126,7 @@ class _RootPageState extends State<RootPage> {
                     Map<String, dynamic> classes = new Map<String, dynamic>();
 
                     if (snapshot.data.exists) {
-                      classes.addAll(snapshot.data['turmas'][_currentPeriod]);
+                      classes.addAll(snapshot.data.data["turmas"]);
                     }
 
                     return new StudentHome(
