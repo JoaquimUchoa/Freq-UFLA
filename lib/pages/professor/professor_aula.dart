@@ -25,7 +25,7 @@ class ProfessorAula extends StatefulWidget {
 
 class _ProfessorAulaState extends State<ProfessorAula> {
   List<String> _alunos = new List<String>();
-  List<dynamic> _presencas = new List<dynamic>();
+  Map<String, bool> _presencas = new Map<String, bool>();
   DateTime _date;
   TimeOfDay _time;
   final Map<String, dynamic> _aula = {};
@@ -48,7 +48,7 @@ class _ProfessorAulaState extends State<ProfessorAula> {
     _time = new TimeOfDay.fromDateTime(_date);
     //faltas
     widget.aulaEdit['chamada'].keys
-        .forEach((key) => _presencas.add(widget.aulaEdit['chamada'][key]));
+        .forEach((key) =>_presencas[key] = widget.aulaEdit['chamada'][key]);
   }
 
   @override
@@ -119,7 +119,7 @@ class _ProfessorAulaState extends State<ProfessorAula> {
 
   _setChamada() {
     for (var i = 0; i < _alunos.length; i++) {
-      _chamada['${_alunos[i].replaceAll(' ', '')}'] = _presencas[i];
+      _chamada[_alunos[i]] = _presencas[_alunos[i]];
     }
   }
 
@@ -141,27 +141,29 @@ class _ProfessorAulaState extends State<ProfessorAula> {
             .collection('turmas')
             .document(widget.turma)
             .collection('alunos')
+            .orderBy('nome')
             .snapshots(),
-        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> aluno) {
-          if (aluno.hasError) {
-            return Center(child: Text('Error: ${aluno.error}'));
+        builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> alunos) {
+          if (alunos.hasError) {
+            return Center(child: Text('Error: ${alunos.error}'));
           }
 
-          if (aluno.connectionState == ConnectionState.waiting) {
+          if (!alunos.hasData) {
             return Center(child: CircularProgressIndicator());
           }
 
-          if (aluno.data.documents.length == 0) {
+          if (alunos.data.documents.length == 0) {
             return Center(child: Text('Nenhum aluno matriculado.'));
           }
 
           //setando true para todas as presenças (if serve para não adicionar novos valores ao renderizar)
           if (_presencas.length == 0) {
-            List.generate(
-                aluno.data.documents.length, (index) => {_presencas.add(true)});
+            alunos.data.documents.forEach((element) {
+              _presencas[element.documentID] = true;
+            });
           }
           if (_alunos.length == 0)
-            aluno.data.documents.forEach((element) {
+            alunos.data.documents.forEach((element) {
               _alunos.add(element.documentID);
             });
 
@@ -182,7 +184,7 @@ class _ProfessorAulaState extends State<ProfessorAula> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16.0, vertical: 8.0),
                       child: Text('Presenças:')),
-                  _listViewAlunos(aluno.data.documents)
+                  _listViewAlunos(alunos.data.documents)
                 ]),
           );
         });
@@ -235,11 +237,16 @@ class _ProfessorAulaState extends State<ProfessorAula> {
                     borderRadius: BorderRadius.circular(5.0),
                   ),
                   child: ListTile(
-                    title: Text(aluno[i].documentID.replaceAll(' ', '')),
+                    title: Text(aluno[i]
+                        .data['nome']
+                        .toString()
+                        .split(" ")
+                        .map((str) => str[0] + str.substring(1).toLowerCase())
+                        .join(" ")),
                     trailing: Switch(
-                        value: _presencas[i],
+                        value: _presencas[aluno[i].documentID],
                         onChanged: (s) => {
-                              setState(() => {_presencas[i] = s})
+                              setState(() => {_presencas[aluno[i].documentID] = s})
                             }),
                   )));
         });

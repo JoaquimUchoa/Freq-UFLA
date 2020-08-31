@@ -25,7 +25,7 @@ class _StudentHomeState extends State<StudentHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("StudentHome"),
+        title: Text("Disciplinas"),
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.exit_to_app),
@@ -78,6 +78,7 @@ class _StudentHomeState extends State<StudentHome> {
           return Center(
             child: CircularProgressIndicator(),
           );
+
         if (snapshot.data.documents.any(
             (element) => element.documentID == widget.registrationNumber)) {
           int faltas = 0;
@@ -137,4 +138,5 @@ class _StudentHomeState extends State<StudentHome> {
       },
     );
   }
+
 }

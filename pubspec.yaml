@@ -35,6 +35,9 @@ dependencies:
   shared_preferences: ">=0.5.8 <2.0.0"
   email_validator: "^1.0.0"
   toast: ^0.1.5
+  csv: ^4.0.3
+  file_picker: ^1.13.3
+  path_provider:
 
 dev_dependencies:
   flutter_test:

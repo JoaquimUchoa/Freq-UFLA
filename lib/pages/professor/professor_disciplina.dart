@@ -113,7 +113,8 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina>
             return Center(child: Text('Error: ${aula.error}'));
           }
 
-          if (aula.connectionState == ConnectionState.waiting) {
+          if (aula.connectionState == ConnectionState.waiting ||
+              !aula.hasData) {
             return Center(child: CircularProgressIndicator());
           }
 
@@ -136,42 +137,46 @@ class _ProfessorDisciplinaState extends State<ProfessorDisciplina>
                         child: ListTile(
                           title: Text(
                               'Aula de ${DateFormat("EEEE, d 'de' MMMM 'às' HH:mm", 'pt_Br').format(DateTime.parse(aula.data.documents[i].data['data'].toDate().toString()))}'),
-                          onLongPress: () => {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Text('Excluir Aula'),
-                                content: Text(
-                                    'Deseja realmente excluir a aula de ${DateFormat("EEEE, d 'de' MMMM", 'pt_Br').format(DateTime.parse(aula.data.documents[i].data['data'].toDate().toString()))}?'),
-                                actions: <Widget>[
-                                  FlatButton(
-                                    child: Text('Não'),
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                    },
-                                  ),
-                                  FlatButton(
-                                    child: Text('Sim'),
-                                    onPressed: () async {
-                                      Navigator.pop(context);
-                                      await Firestore.instance
-                                          .collection('periodos')
-                                          .document(widget.currentPeriod)
-                                          .collection('disciplinas')
-                                          .document(widget.disciplinaCodigo)
-                                          .collection('turmas')
-                                          .document(widget
-                                              .turmas[_tabController.index])
-                                          .collection('aulas')
-                                          .document(
-                                              aula.data.documents[i].documentID)
-                                          .delete();
-                                    },
-                                  )
-                                ],
-                              ),
-                            )
-                          },
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete, color: Colors.redAccent),
+                            onPressed: () => {
+                              showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                        title: Text('Excluir Aula'),
+                                        content: Text(
+                                            'Deseja realmente excluir a aula de ${DateFormat("EEEE, d 'de' MMMM", 'pt_Br').format(DateTime.parse(aula.data.documents[i].data['data'].toDate().toString()))}?'),
+                                        actions: <Widget>[
+                                          FlatButton(
+                                            child: Text('Não'),
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                          FlatButton(
+                                            child: Text('Sim'),
+                                            onPressed: () async {
+                                              Navigator.pop(context);
+                                              await Firestore.instance
+                                                  .collection('periodos')
+                                                  .document(
+                                                      widget.currentPeriod)
+                                                  .collection('disciplinas')
+                                                  .document(
+                                                      widget.disciplinaCodigo)
+                                                  .collection('turmas')
+                                                  .document(widget.turmas[
+                                                      _tabController.index])
+                                                  .collection('aulas')
+                                                  .document(aula.data
+                                                      .documents[i].documentID)
+                                                  .delete();
+                                            },
+                                          )
+                                        ],
+                                      ))
+                            },
+                          ),
                           onTap: () => {
                             Navigator.push(
                               context,
